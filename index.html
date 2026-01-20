@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Audio Mixer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 32px;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 24px;
+            text-align: center;
+            font-size: 28px;
+        }
+        .track {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 2px solid #e9ecef;
+        }
+        .track h3 {
+            color: #495057;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #dee2e6;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        .volume-value {
+            min-width: 45px;
+            text-align: right;
+            font-weight: 600;
+            color: #495057;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #btn-start {
+            background: #667eea;
+            color: white;
+        }
+        #btn-start:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        #btn-stop {
+            background: #dc3545;
+            color: white;
+        }
+        #btn-stop:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 500;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .status.idle { background: #e9ecef; color: #6c757d; }
+        .status.loading { background: #fff3cd; color: #856404; }
+        .status.recording { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.success { background: #d1ecf1; color: #0c5460; }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(0,0,0,0.1);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 YouTube Audio Mixer</h1>
+        
+        <div class="track">
+            <h3>Track 1</h3>
+            <label>YouTube URL</label>
+            <input type="text" id="url1" placeholder="https://youtube.com/watch?v=...">
+            
+            <label>Start Time (seconds)</label>
+            <input type="number" id="start1" value="0" min="0" step="0.1">
+            
+            <label>Volume</label>
+            <div class="volume-control">
+                <input type="range" id="vol1" min="0" max="1" step="0.01" value="1">
+                <span class="volume-value" id="vol1-value">100%</span>
+            </div>
+        </div>
+        
+        <div class="track">
+            <h3>Track 2</h3>
+            <label>YouTube URL</label>
+            <input type="text" id="url2" placeholder="https://youtube.com/watch?v=...">
+            
+            <label>Start Time (seconds)</label>
+            <input type="number" id="start2" value="0" min="0" step="0.1">
+            
+            <label>Volume</label>
+            <div class="volume-control">
+                <input type="range" id="vol2" min="0" max="1" step="0.01" value="1">
+                <span class="volume-value" id="vol2-value">100%</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="btn-start">Start Recording</button>
+            <button id="btn-stop" disabled>Stop & Save</button>
+        </div>
+        
+        <div class="status idle" id="status">Ready to record</div>
+    </div>
+
+    <script>
+        let audioCtx, recorder, chunks;
+        const tracks = [];
+
+        // AudioTrack管理クラス
+        class Track {
+            constructor(ctx, dest, url, startTime, volInput) {
+                this.ctx = ctx;
+                this.url = url;
+                this.startTime = startTime;
+                this.volInput = volInput;
+                this.dest = dest;
+                this.audio = null;
+                this.source = null;
+                this.gain = null;
+            }
+
+            async init() {
+                // バックエンドのリクエストURL（WAV形式）
+                const proxyUrl = `http://localhost:8000/audio?url=${encodeURIComponent(this.url)}&start=${this.startTime}&format=wav`;
+                
+                this.audio = new Audio(proxyUrl);
+                this.audio.crossOrigin = "anonymous";
+                
+                // エラーハンドリング
+                this.audio.onerror = (e) => {
+                    throw new Error(`Failed to load audio: ${this.url}`);
+                };
+                
+                this.source = this.ctx.createMediaElementSource(this.audio);
+                this.gain = this.ctx.createGain();
+                this.gain.gain.value = this.volInput.value;
+                
+                // ボリューム操作の連動
+                this.volInput.oninput = () => {
+                    this.gain.gain.setTargetAtTime(this.volInput.value, this.ctx.currentTime, 0.01);
+                };
+                
+                // 接続: Source -> Gain -> Destination
+                this.source.connect(this.gain);
+                this.gain.connect(this.dest);
+                this.gain.connect(this.ctx.destination);
+            }
+
+            async ready() {
+                return new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error(`Timeout loading: ${this.url}`));
+                    }, 30000); // 30秒タイムアウト
+
+                    this.audio.oncanplaythrough = () => {
+                        clearTimeout(timeout);
+                        resolve();
+                    };
+
+                    this.audio.onerror = () => {
+                        clearTimeout(timeout);
+                        reject(new Error(`Failed to load: ${this.url}`));
+                    };
+
+                    this.audio.load();
+                });
+            }
+
+            play() { 
+                if (this.audio) {
+                    this.audio.play().catch(e => {
+                        console.error('Play failed:', e);
+                    });
+                }
+            }
+
+            stop() {
+                if (this.audio) {
+                    this.audio.pause();
+                    this.audio.currentTime = 0;
+                }
+            }
+
+            destroy() {
+                if (this.source) {
+                    this.source.disconnect();
+                }
+                if (this.gain) {
+                    this.gain.disconnect();
+                }
+                if (this.audio) {
+                    this.audio.pause();
+                    this.audio.src = "";
+                    this.audio = null;
+                }
+            }
+        }
+
+        // UI要素
+        const btnStart = document.getElementById('btn-start');
+        const btnStop = document.getElementById('btn-stop');
+        const status = document.getElementById('status');
+
+        // ボリューム表示の更新
+        ['vol1', 'vol2'].forEach(id => {
+            const vol = document.getElementById(id);
+            const display = document.getElementById(`${id}-value`);
+            vol.oninput = () => {
+                display.textContent = Math.round(vol.value * 100) + '%';
+            };
+        });
+
+        // ステータス更新ヘルパー
+        function setStatus(text, type = 'idle') {
+            status.className = `status ${type}`;
+            if (type === 'loading') {
+                status.innerHTML = `<span class="spinner"></span>${text}`;
+            } else {
+                status.textContent = text;
+            }
+        }
+
+        // 入力検証
+        function validateInputs() {
+            const url1 = document.getElementById('url1').value.trim();
+            const url2 = document.getElementById('url2').value.trim();
+            
+            if (!url1 || !url2) {
+                throw new Error('Please enter both YouTube URLs');
+            }
+
+            const youtubeRegex = /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\/.+/;
+            if (!youtubeRegex.test(url1) || !youtubeRegex.test(url2)) {
+                throw new Error('Please enter valid YouTube URLs');
+            }
+
+            return { url1, url2 };
+        }
+
+        // クリーンアップ
+        function cleanup() {
+            tracks.forEach(t => t.destroy());
+            tracks.length = 0;
+            
+            if (recorder && recorder.state !== 'inactive') {
+                recorder.stop();
+            }
+            recorder = null;
+            chunks = [];
+        }
+
+        btnStart.onclick = async () => {
+            try {
+                // 入力検証
+                const { url1, url2 } = validateInputs();
+                
+                setStatus('Loading streams...', 'loading');
+                btnStart.disabled = true;
+
+                // 1. AudioContextの初期化
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                await audioCtx.resume();
+
+                const dest = audioCtx.createMediaStreamDestination();
+
+                // 2. トラックの生成
+                const t1 = new Track(
+                    audioCtx, 
+                    dest, 
+                    url1,
+                    parseFloat(document.getElementById('start1').value) || 0,
+                    document.getElementById('vol1')
+                );
+                
+                const t2 = new Track(
+                    audioCtx, 
+                    dest, 
+                    url2,
+                    parseFloat(document.getElementById('start2').value) || 0,
+                    document.getElementById('vol2')
+                );
+
+                tracks.push(t1, t2);
+
+                // 初期化とロード待ち
+                await t1.init();
+                await t2.init();
+                await Promise.all([t1.ready(), t2.ready()]);
+
+                // 3. 録音準備
+                chunks = [];
+                recorder = new MediaRecorder(dest.stream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+                
+                recorder.ondataavailable = e => {
+                    if (e.data.size > 0) {
+                        chunks.push(e.data);
+                    }
+                };
+                
+                recorder.onstop = saveFile;
+                
+                recorder.onerror = (e) => {
+                    console.error('Recorder error:', e);
+                    setStatus('Recording error occurred', 'error');
+                };
+
+                // 4. 同時スタート
+                setStatus('Recording... (Click "Stop & Save" when done)', 'recording');
+                t1.play();
+                t2.play();
+                recorder.start();
+
+                btnStop.disabled = false;
+
+            } catch (error) {
+                console.error('Start error:', error);
+                setStatus(error.message || 'Failed to start recording', 'error');
+                cleanup();
+                btnStart.disabled = false;
+                btnStop.disabled = true;
+            }
+        };
+
+        btnStop.onclick = () => {
+            try {
+                if (recorder && recorder.state === 'recording') {
+                    recorder.stop();
+                }
+                tracks.forEach(t => t.stop());
+                
+                setStatus('Processing...', 'loading');
+                btnStop.disabled = true;
+                
+            } catch (error) {
+                console.error('Stop error:', error);
+                setStatus('Failed to stop recording', 'error');
+                cleanup();
+                btnStart.disabled = false;
+            }
+        };
+
+        function saveFile() {
+            try {
+                if (chunks.length === 0) {
+                    throw new Error('No audio data recorded');
+                }
+
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mix_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`;
+                a.click();
+                
+                // メモリ解放
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+                
+                setStatus('✓ Recording saved successfully!', 'success');
+                cleanup();
+                
+                btnStart.disabled = false;
+                btnStop.disabled = true;
+
+            } catch (error) {
+                console.error('Save error:', error);
+                setStatus('Failed to save recording', 'error');
+                cleanup();
+                btnStart.disabled = false;
+            }
+        }
+
+        // ページ離脱時のクリーンアップ
+        window.addEventListener('beforeunload', (e) => {
+            if (recorder && recorder.state === 'recording') {
+                e.preventDefault();
+                e.returnValue = '';
+                return 'Recording in progress. Are you sure you want to leave?';
+            }
+        });
+
+        // エラー時のグローバルハンドリング
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e.error);
+        });
+    </script>
+</body>
+</html>
